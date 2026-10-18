@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>顾问工作台 · AI场景诊断</title>
+<meta name="theme-color" content="#f4eee4">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='10' fill='%233f5f50'/%3E%3Ctext x='32' y='44' font-size='34' text-anchor='middle' fill='%23fff' font-family='serif'%3E%E9%A1%BE%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="css/style.css?v=2">
+<link rel="stylesheet" href="css/advisor.css?v=2">
+</head>
+<body class="adv">
+<a class="skip" href="#main">跳到正文</a>
+<div id="errBar" class="errbar" role="alert" hidden>页面出了点小问题。<button type="button" onclick="location.reload()">刷新一下</button></div>
+<header class="topbar"><span class="brand"><span class="seal seal-g" aria-hidden="true">顾</span><span>顾问工作台 · AI场景诊断</span></span></header>
+<main class="wrap adv-main" id="main">
+  <div class="tabs" role="tablist" aria-label="工作台">
+    <button type="button" role="tab" id="tab-brief" aria-controls="pane-brief" aria-selected="true" class="tab on">① 诊前 Brief</button>
+    <button type="button" role="tab" id="tab-map" aria-controls="pane-map" aria-selected="false" class="tab" tabindex="-1">② 行动地图</button>
+  </div>
+
+  <section id="pane-brief" role="tabpanel" aria-labelledby="tab-brief" class="pane">
+    <h1 class="adv-h1">导入预约卡，自动生成诊前 Brief</h1>
+    <p class="lead">把用户发来的预约卡文字整段粘贴进来（包括 <code>#ASDX#</code> 开头的那行数据），也可以直接粘 JSON。</p>
+    <label class="sr" for="importText">预约卡文字</label>
+    <textarea id="importText" class="import" rows="7" placeholder="【AI场景诊断 · 预约卡】&#10;称呼：……&#10;……&#10;#ASDX#{……}#END#"></textarea>
+    <div class="row-btns">
+      <button type="button" class="btn btn-primary" id="btnBrief">生成 Brief</button>
+      <label class="btn btn-ghost file-btn">导入文件<input type="file" id="importFile" accept=".txt,.json,text/plain,application/json"></label>
+      <button type="button" class="btn-link" id="btnSample">填入示例</button>
+    </div>
+    <p class="form-err" id="briefErr" role="alert"></p>
+    <div id="briefOut" aria-live="polite"></div>
+  </section>
+
+  <section id="pane-map" role="tabpanel" aria-labelledby="tab-map" class="pane" hidden>
+    <h1 class="adv-h1">填写 1v1 记录，生成《AI行动地图》</h1>
+    <p class="lead">边聊边填，内容自动暂存在本机。填完点最下面的按钮生成。</p>
+    <form id="mapForm" class="form" novalidate>
+      <div class="grid2">
+        <div class="field"><label for="mName">称呼 <em>*</em></label><input id="mName" name="name" maxlength="20" required></div>
+        <div class="field"><label for="mMat">当前AI成熟度</label><select id="mMat" name="maturity"></select></div>
+      </div>
+      <div class="field"><label for="mGoal">TA 的目标 <em>*</em><small>接下来最想改变什么</small></label><textarea id="mGoal" name="goal" rows="2" maxlength="200" required></textarea></div>
+      <fieldset class="field"><legend>TOP3 场景</legend>
+        <input name="top1" maxlength="30" aria-label="场景 1" placeholder="场景 1">
+        <input name="top2" maxlength="30" aria-label="场景 2" placeholder="场景 2">
+        <input name="top3" maxlength="30" aria-label="场景 3" placeholder="场景 3">
+      </fieldset>
+      <div class="field"><label for="mProj">第一个AI项目 <em>*</em><small>写成一个项目，而不是「学AI」</small></label><input id="mProj" name="project" maxlength="40" required placeholder="例：用AI每周自动生成一份竞品简报"><p class="hint" id="projHint"></p></div>
+      <div class="field"><label for="mNow">当前状态<small>现在是怎么做的、花多少时间</small></label><input id="mNow" name="now" maxlength="60" placeholder="例：每周手动看 10 个账号，约 4 小时"></div>
+      <div class="field"><label for="mG21">21天目标 <em>*</em></label><input id="mG21" name="goal21" maxlength="60" required placeholder="例：跑通一条每周一早上自动出简报的流程"></div>
+      <div class="grid2">
+        <div class="field"><label for="mAi">AI 负责</label><textarea id="mAi" name="ai" rows="2" maxlength="80" placeholder="例：抓取、去重、写成一页简报"></textarea></div>
+        <div class="field"><label for="mMe">我负责</label><textarea id="mMe" name="me" rows="2" maxlength="80" placeholder="例：定信息源、看结论、决定跟进"></textarea></div>
+      </div>
+      <div class="field"><label for="mOk">成功标准 <em>*</em><small>怎样算做成了，最好能量化</small></label><input id="mOk" name="success" maxlength="60" required placeholder="例：连续 3 周自动产出，每周节省 3 小时以上"></div>
+      <div class="field"><label for="mGroup">推荐实践组<small>默认按项目内容自动判断</small></label><select id="mGroup" name="group"></select></div>
+      <p class="form-err" id="mapErr" role="alert"></p>
+      <div class="row-btns"><button type="submit" class="btn btn-primary btn-lg">生成《AI行动地图》</button><button type="button" class="btn-link" id="btnClear">清空重填</button></div>
+    </form>
+    <div id="mapOut" aria-live="polite"></div>
+  </section>
+</main>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="js/config.js?v=2"></script>
+<script src="js/data.js?v=2"></script>
+<script src="js/engine.js?v=2"></script>
+<script src="js/common.js?v=2"></script>
+<script src="js/sheet.js?v=2"></script>
+<script src="js/advisor.js?v=2"></script>
+</body>
+</html>
