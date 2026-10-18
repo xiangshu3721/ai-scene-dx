@@ -22,7 +22,6 @@ window.ASDX_CONFIG = {
   QUESTION_PROVIDER: "rules",
   PRODUCT_API_BASE: "",
   ADVISOR_NAME: "翔叔",
-  PRICE_DIAG: 399,
   PRICE_LAB: 1499,
   SITE_URL: "xiangshu3721.github.io/ai-scene-dx"
 };

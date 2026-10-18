@@ -8,7 +8,7 @@
   var esc = U.esc, store = U.store, $ = function (id) { return document.getElementById(id); };
   var ADV = CFG.ADVISOR_NAME || "翔叔";
   var KD = "asdx.adv.draft.v1";
-  var PRICE_LAB = CFG.PRICE_LAB || 1499, PRICE_DIAG = CFG.PRICE_DIAG || 399;
+  var PRICE_LAB = CFG.PRICE_LAB || 1499;
   var current = null; // 当前导入的预约数据
   var lastMap = null;
 
@@ -222,7 +222,7 @@
     h += '<section class="next" aria-labelledby="nextT"><h2 id="nextT">你的第一个项目已经确定，<br>下一步：把它真正做出来。</h2>';
     h += '<p class="np">AI行动实验室 · 21 天真实项目制</p>';
     h += "<ul><li><b>21 天</b>一个周期，只做一个项目</li><li><b>真实项目</b>做你自己的事，不做练习题</li><li><b>每周共同场景</b>一起拆解同类问题</li><li><b>项目小组 + Demo Day</b>每周展示进度</li></ul>";
-    h += '<p class="np">实验室 <s>¥' + fmtMoney(PRICE_LAB) + "</s>　诊断费抵扣后只需补 <b>¥" + fmtMoney(PRICE_LAB - PRICE_DIAG) + "</b></p>";
+    h += '<p class="np">费用 <b>¥' + fmtMoney(PRICE_LAB) + "</b> / 21 天一期</p>";
     h += '<div class="pcard" id="projectCard"><h3>AI实践项目卡</h3><dl><dt>项目</dt><dd>' + esc(o.project) + "</dd><dt>当前状态</dt><dd>" + esc(o.now || "—") + "</dd><dt>目标</dt><dd>" + esc(o.goal21) + "</dd><dt>周期</dt><dd>21 天</dd><dt>成功标准</dt><dd>" + esc(o.success) + "</dd><dt>实践组</dt><dd>" + esc(g.name) + "</dd></dl></div>";
     h += '<div class="r-actions"><button type="button" class="btn btn-ghost" id="btnCardImg">保存项目卡图片</button></div></section>';
     $("mapOut").innerHTML = h;
@@ -244,7 +244,7 @@
       { t: "box", title: "第一个 AI 项目", lines: [o.project], bg: C.redBg, color: C.red }, { t: "gap", h: 14 },
       { t: "kv", rows: [["21天目标", o.goal21], ["AI 负责", o.ai || "—"], ["我负责", o.me || "—"], ["成功标准", o.success]] },
       { t: "gap", h: 14 },
-      { t: "box", title: "推荐加入：AI行动实验室 · " + o.groupObj.name + "实践组", lines: ["21 天真实项目制 · 每周共同场景 · 项目小组 · 每周 Demo Day"], bg: C.greenBg, color: C.green },
+      { t: "box", title: "推荐加入：AI行动实验室 · " + o.groupObj.name + "实践组", lines: ["21 天真实项目制 · 每周共同场景 · 项目小组 · 每周 Demo Day", "¥" + fmtMoney(PRICE_LAB) + " / 21 天一期"], bg: C.greenBg, color: C.green },
       { t: "gap", h: 18 }, { t: "foot", text: "你的第一个项目已经确定，下一步：把它真正做出来。" }
     ];
   }

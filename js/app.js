@@ -354,13 +354,12 @@
   /* ---------- P6 预约 ---------- */
   VIEWS.book = function () {
     var c = store.get(K.contact, {}) || {};
-    var price = CFG.PRICE_DIAG || 399;
     var h = brandBar();
     h += '<main class="wrap book"><p class="kicker">1v1 真人诊断</p><h1 data-focus>45 分钟，和' + esc(ADV) + "一起<br>定下你的第一个 AI 项目</h1>";
     h += '<p class="lead">报告告诉你“哪些事可以交给 AI”。1v1 要解决的是：<b>你到底先做哪一个，怎么做成。</b></p>';
     h += '<ol class="flow">' + ["聊目标：你接下来半年最想改变什么", "过一遍你真实的一周", "找出 AI 摩擦点：哪些事又烦又重复", "锁定 TOP3 场景", "定义第一个 AI 项目，写成行动地图"].map(function (t, i) {
       return "<li><b>" + (i + 1) + "</b><span>" + t + "</span></li>"; }).join("") + "</ol>";
-    h += '<div class="price"><p><b>¥' + price + '</b> / 45 分钟</p><p class="price-sub">报名「AI行动实验室」后，诊断费全额抵扣。</p></div>';
+    h += '<div class="price"><p><b>免费</b> · 45 分钟真人诊断</p><p class="price-sub">不收费，也不用先报名什么。' + esc(ADV) + '亲自和你聊，帮你把第一个 AI 项目定下来。</p></div>';
     h += '<form class="form" id="bookForm" novalidate>';
     h += '<div class="field"><label for="fName">怎么称呼你 <em>*</em></label><input id="fName" name="name" autocomplete="nickname" maxlength="20" required value="' + esc(c.name || "") + '" placeholder="比如：王老师 / 小林"></div>';
     h += '<fieldset class="field"><legend>联系方式 <em>*</em><small>微信或手机，至少填一个</small></legend>';
@@ -462,7 +461,7 @@
     p.top.slice(0, 3).forEach(function (r, i) {
       bl.push({ t: "card", rank: i + 1, title: r.name, tag: D.TYPES[r.type].name, type: r.type, lines: [["当前状态　", "每周约 " + r.hours + " 小时"]] }, { t: "gap", h: 10 });
     });
-    bl.push({ t: "gap", h: 10 }, { t: "foot", text: "45 分钟真人 AI 场景诊断 · 请把这张图发给" + ADV });
+    bl.push({ t: "gap", h: 10 }, { t: "foot", text: "免费 · 45 分钟真人 AI 场景诊断 · 请把这张图发给" + ADV });
     return bl;
   }
 
