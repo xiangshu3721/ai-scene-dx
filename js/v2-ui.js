@@ -239,7 +239,7 @@
     }
     function save(x, rep) {
       var rec = { v: 2, id: "r" + Date.now().toString(36), code: newCode(), t: Date.now(), a: x, report: rep,
-        profile: { status: x.status, goals: x.goals }, answers: {}, // 兼容旧列表过滤
+        // 注意：故意不写 answers 字段，旧版页面（同域）会忽略 V0.2 记录，不会误渲染
         meta: { identity: E.statusText(x), goals: (x.goals || []).map(function (v) { return E.label(D.GOALS, v); }), scenes: (x.scenes || []).map(function (id) { return E.scene(id).name; }),
           pains: (x.pains || []).map(function (v) { return E.label(D.PAINS, v); }), painTop: E.label(D.PAINS, x.painTop), custom: x.custom || "",
           aiScenes: rep.opps.map(function (o) { return o.name; }), primary: rep.opps[0] && rep.opps[0].name, source: rep.source },

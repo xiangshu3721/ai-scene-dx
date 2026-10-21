@@ -98,6 +98,7 @@ with sync_playwright() as pw:
     # 我的报告
     p.goto(BASE); p.wait_for_selector(".hist-item")
     check(p.locator(".hist-item").count() == 5, "我的报告列出 5 份")
+    check(p.evaluate("() => JSON.parse(localStorage['asdx.reports.v1']).filter(x => x.id && x.profile && x.answers).length") == 0, "正式站旧代码（同域）会忽略 V0.2 记录，不误渲染")
     p.locator(".hist-item").first.click(); p.wait_for_selector(".v2-insight"); check(True, "从我的报告重新打开 V0.2 报告")
     p.goto(BASE); p.click('[data-act="consult"]'); p.wait_for_selector("#cT"); check("编号" not in "" and p.inner_text("#cT") == "你的这些AI机会，到底该怎么真正实现？", "我的报告 → 会诊入口")
     c.close()
@@ -154,8 +155,11 @@ with sync_playwright() as pw:
       const prof = {}; D.PROFILE.forEach(q => { prof[q.id] = q.type === 'multi' ? [q.options[0].v] : q.options[1].v; });
       const ans = {}; E.scenesFor(E.identityOf(prof)).forEach((s, i) => { ans[s.id] = { f: 1 + (i % 3), p: 1 + (i % 3) }; });
       const rec = { id: 'rold1', t: Date.now() - 86400000, profile: prof, answers: ans, followQs: [], fu: {}, summary: '旧版报告' };
-      localStorage.setItem('asdx.reports.v1', JSON.stringify([rec])); }""")
-    p.reload(); p.wait_for_selector(".hist-item"); p.click(".hist-item"); p.wait_for_selector("#top5")
+      const v2 = { v: 2, id: 'rnew1', code: 'DXTEST1', t: Date.now(), a: { status: 'retired', scenes: ['research'] }, report: null, summary: '新版报告' };
+      localStorage.setItem('asdx.reports.v1', JSON.stringify([v2, rec])); }""")
+    p.reload(); p.wait_for_selector(".hist-item"); check(p.locator(".hist-item").count() == 2, "新旧报告混合列表都显示")
+    p.locator(".hist-item").first.click(); p.wait_for_selector(".v2-insight"); check(True, "缺 report 字段的 V0.2 记录用规则补全，不崩")
+    p.goto(BASE); p.wait_for_selector(".hist-item"); p.locator(".hist-item").nth(1).click(); p.wait_for_selector("#top5")
     check(p.locator(".opp").count() >= 1 and not errs, "旧报告仍按旧版样式打开")
     shot(p, "13-legacy-report.png")
     p.click('[data-act="book"]'); p.wait_for_selector("#cT"); check(True, "旧报告的预约按钮 → 新会诊页")

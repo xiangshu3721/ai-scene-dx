@@ -6,7 +6,7 @@
   var D = window.ASDX_DATA, E = window.ASDX_ENGINE, U = window.ASDX_COMMON, CFG = window.ASDX_CONFIG || {};
   var esc = U.esc, store = U.store;
   var app = document.getElementById("app");
-  var K = { prog: "asdx.progress.v1", reports: "asdx.reports.v1", bookings: "asdx.bookings.v1", queue: "asdx.queue.v1", contact: "asdx.contact.v1" };
+  var K = { prog: "asdx.progress.v2", reports: "asdx.reports.v1", bookings: "asdx.bookings.v1", queue: "asdx.queue.v1", contact: "asdx.contact.v1" };
   var ADV = CFG.ADVISOR_NAME || "翔叔";
   var S = fresh();
   var advanceTimer = null;
@@ -16,7 +16,7 @@
   function idt() { return E.identityOf(S.profile); }
   function scenes() { return E.scenesFor(idt()); }
   function stars(n) { var s = ""; for (var i = 0; i < 5; i++) s += i < n ? "★" : "☆"; return s; }
-  function reports() { var r = store.get(K.reports, []); return Array.isArray(r) ? r.filter(function (x) { return x && x.id && x.profile && x.answers; }) : []; }
+  function reports() { var r = store.get(K.reports, []); return Array.isArray(r) ? r.filter(function (x) { return x && x.id && (x.v === 2 ? !!x.a : (x.profile && x.answers)); }) : []; }
 
   /* ---------- 渲染入口 ---------- */
   function go(view) { S.view = view; saveProg(); render(); }
