@@ -65,3 +65,14 @@ python3 tests/e2e.py http://127.0.0.1:8765/ ./shots
 ```
 
 修改 css/js 后，把 html 里的 `?v=` 数字加一，避免手机缓存旧文件。
+
+---
+
+## V0.2（分支 `v0.2-p0`，测试中，未上线）
+
+- 测试地址（直接读分支文件，不影响正式站）：https://raw.githack.com/xiangshu3721/ai-scene-dx/v0.2-p0/index.html
+- 新增文件：`js/v2-data.js`（7 题 + 规则场景库）、`js/v2-engine.js`（规则报告 + AI 结果校验）、`js/v2-ui.js`（问卷/报告/会诊）、
+  `js/consult-config.js`（顾问微信号/二维码配置，现为空）、`js/track.js`（埋点）、`server/ai-proxy.js`（DeepSeek 服务端代理，未部署）
+- 启用 AI：部署 `server/ai-proxy.js`（环境变量 `DEEPSEEK_API_KEY`），把地址填进 `js/config.js` 的 `AI_ENDPOINT`。不填 = 本地规则简化版报告。
+- 旧版（V0.1）报告：存储键不变（`asdx.reports.v1`），无 `v:2` 的记录仍按旧版页面打开。
+- 测试：`python3 tests/e2e_v2.py http://127.0.0.1:8765/ ./shots`

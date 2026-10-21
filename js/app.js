@@ -12,7 +12,7 @@
   var advanceTimer = null;
 
   function fresh() { return { view: "home", profile: { goals: [] }, pi: 0, answers: {}, si: 0, followQs: null, fu: {}, fi: 0 }; }
-  function saveProg() { var keep = ["profile", "scanIntro", "scan", "follow"]; if (keep.indexOf(S.view) >= 0) store.set(K.prog, S); }
+  function saveProg() { var keep = ["profile", "scanIntro", "scan", "follow", "q", "fu"]; if (keep.indexOf(S.view) >= 0) store.set(K.prog, S); }
   function idt() { return E.identityOf(S.profile); }
   function scenes() { return E.scenesFor(idt()); }
   function stars(n) { var s = ""; for (var i = 0; i < 5; i++) s += i < n ? "★" : "☆"; return s; }
@@ -47,6 +47,30 @@
   }
 
   var VIEWS = {};
+  var TRACK = window.ASDX_TRACK || function () {};
+
+  /* ---------- V0.2：问卷、报告、会诊（见 v2-ui.js） ---------- */
+  function openRec(rec, ok) {
+    S = fresh(); S.rec = rec; if (ok != null) S.saveOk = ok;
+    TRACK("report_view", { code: rec.code || rec.id, v: rec.v || 1 });
+    go(rec.v === 2 ? "report2" : "report");
+  }
+  var V2 = window.ASDX_V2_UI({
+    state: function () { return S; },
+    go: go, rerender: function () { var y = window.scrollY; render(); window.scrollTo(0, y); },
+    save: saveProg, brandBar: function (r) { return brandBar(r); }, flash: function (m) { flash(m); },
+    home: function () { S = fresh(); render(); },
+    clearProg: function () { store.del(K.prog); },
+    saveReport: function (rec) { return store.set(K.reports, [rec].concat(reports()).slice(0, 20)); },
+    openRec: openRec,
+    markIntent: function () { // 点联系方式 = 意向（不等于预约）
+      if (!S.rec || !S.rec.id) return;
+      var l = store.get(K.reports, []); if (!Array.isArray(l)) return;
+      l.forEach(function (r) { if (r && r.id === S.rec.id) { r.consult = r.consult || {}; r.consult.intent = true; r.consult.intentAt = r.consult.intentAt || Date.now(); } });
+      store.set(K.reports, l);
+    }
+  });
+  Object.keys(V2.views).forEach(function (k) { VIEWS[k] = V2.views[k]; });
 
   /* ---------- P1 首页 ---------- */
   VIEWS.home = function () {
@@ -62,8 +86,8 @@
     if (resumable) h += '<button type="button" class="btn btn-ghost" data-act="resume">继续上次没做完的</button>';
     h += '</div><p class="note">不测 AI 水平，也不打分排名。<br>只帮你找出最值得先做的 3～5 件事。</p></section>';
     h += '<section class="path" aria-label="诊断路径"><ol>' +
-      '<li><b>测</b><span>10 分钟扫描你的真实场景</span></li>' +
-      '<li><b>聊</b><span>和' + esc(ADV) + '聊 45 分钟</span></li>' +
+      '<li><b>测</b><span>约3～5分钟，发现你的AI机会</span></li>' +
+      '<li><b>聊</b><span>免费45分钟，和' + esc(ADV) + '一起厘清AI落地路径</span></li>' +
       '<li><b>定</b><span>选出第一个 AI 项目</span></li>' +
       '<li><b>做</b><span>21 天把它真正做出来</span></li></ol></section>';
     h += '<section class="history" aria-labelledby="histT"><h2 id="histT">我的报告</h2>';
@@ -75,9 +99,10 @@
           '<button type="button" class="hist-del" data-act="delReport" data-id="' + esc(r.id) + '" aria-label="删除这份报告">删除</button></li>';
       });
       h += "</ul>";
+      h += '<p class="v2-homeconsult"><button type="button" class="btn-link" data-act="consult">想把报告里的 AI 机会真正落地？预约免费 45 分钟会诊 →</button></p>';
     }
     h += "</section></main>";
-    h += '<footer class="foot">作答只保存在你自己的设备上 · 不调用任何 AI 模型</footer>';
+    h += '<footer class="foot">' + (String(CFG.AI_ENDPOINT || "").trim() ? "作答只保存在你自己的设备上 · 生成报告时会把匿名作答发给 AI 分析" : "作答只保存在你自己的设备上 · 不调用任何 AI 模型") + '</footer>';
     return h;
   };
 
@@ -478,9 +503,10 @@
     var act = el.getAttribute("data-act");
     switch (act) {
       case "home": S = fresh(); render(); break;
-      case "start": S = fresh(); store.del(K.prog); go("profile"); break;
+      case "start": S = fresh(); S.a = { goals: [], scenes: [], pains: [] }; S.qi = 0; store.del(K.prog); go("q"); break;
+      case "consult": { var hl = reports().sort(function (x, y) { return y.t - x.t; }); S = fresh(); S.rec = hl[0] || null; TRACK("consult_open", { from: "home" }); go("consult"); break; }
       case "resume": var pr = store.get(K.prog, null); if (pr) { S = pr; if (S.view === "follow") S.followQs = null; render(); } break;
-      case "openReport": var id = el.getAttribute("data-id"); var r = reports().filter(function (x) { return x.id === id; })[0]; if (r) { S = fresh(); S.rec = r; go("report"); } break;
+      case "openReport": var id = el.getAttribute("data-id"); var r = reports().filter(function (x) { return x.id === id; })[0]; if (r) openRec(r); break;
       case "delReport": if (window.confirm("确定删除这份报告吗？删除后找不回来。")) { var did = el.getAttribute("data-id"); store.set(K.reports, reports().filter(function (x) { return x.id !== did; })); render(); } break;
       case "pick": {
         var q = D.PROFILE[S.pi], v = JSON.parse(el.getAttribute("data-v"));
@@ -518,8 +544,9 @@
         break;
       }
       case "back": back(); break;
-      case "restart": S = fresh(); store.del(K.prog); go("profile"); break;
-      case "book": go("book"); break;
+      default: if (V2.actions[act]) { if (el.tagName !== "A") e.preventDefault(); V2.actions[act](el); } break;
+      case "restart": S = fresh(); S.a = { goals: [], scenes: [], pains: [] }; S.qi = 0; store.del(K.prog); go("q"); break;
+      case "book": TRACK("consult_open", { from: "v1report" }); go("consult"); break;
       case "backReport": go("report"); break;
       case "saveReportImg": try { Sheet.show(Sheet.render(reportBlocks(curRep(), S.rec)), "AI场景初诊报告", "AI场景初诊报告"); } catch (er) { flash("生成图片失败，可以直接截屏保存"); } break;
       case "saveCardImg": try { Sheet.show(Sheet.render(cardBlocks(S.booking)), "AI场景诊断-预约卡", "预约卡"); } catch (er2) { flash("生成图片失败，可以直接截屏保存"); } break;
@@ -533,6 +560,7 @@
       }); break;
     }
   });
+  app.addEventListener("input", function (e) { V2.onInput(e); });
   app.addEventListener("submit", function (e) { if (e.target.id === "bookForm") { e.preventDefault(); submitBooking(e.target); } });
 
   function profileNext() {
@@ -543,6 +571,7 @@
   }
   function back() {
     if (S.view === "profile") { if (S.pi > 0) { S.pi--; go("profile"); } else { S.view = "home"; render(); } }
+    else if (S.view === "q" || S.view === "fu") { V2.actions.v2Back(); }
     else if (S.view === "scanIntro") { S.pi = D.PROFILE.length - 1; go("profile"); }
     else if (S.view === "scan") { if (S.si > 0) { S.si--; go("scan"); } else go("scanIntro"); }
     else if (S.view === "follow") { if (S.followQs && S.fi > 0) { S.fi--; go("follow"); } else { S.si = scenes().length - 1; go("scan"); } }
@@ -558,7 +587,7 @@
   // 键盘：数字键快速作答（桌面）
   document.addEventListener("keydown", function (e) {
     if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
-    if (e.key === "Backspace" && ["profile", "scan", "follow", "scanIntro"].indexOf(S.view) >= 0) { e.preventDefault(); back(); }
+    if (e.key === "Backspace" && ["profile", "scan", "follow", "scanIntro", "q"].indexOf(S.view) >= 0) { e.preventDefault(); back(); }
   });
 
   var errShown = false;

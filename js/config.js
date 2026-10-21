@@ -14,6 +14,13 @@
  *   未来可改为 "api"：经 Product API → AI Gateway → 多模型路由 出题。
  *   注意：发给出题接口的只有匿名作答数据，永远不含称呼、手机号、微信。
  *
+ * AI_ENDPOINT（V0.2）
+ *   DeepSeek 服务端代理地址（server/ai-proxy.js 部署后的地址，如 https://xxx.scf.tencentcs.com）。
+ *   密钥只在服务端环境变量里，绝不写在这里。留空 = 不调用 AI，报告用本地规则生成（简化版）。
+ *
+ * TRACK_ENDPOINT（V0.2）
+ *   埋点接收地址（sendBeacon POST JSON）。留空 = 只记在本机 localStorage + 控制台。
+ *
  * 改完本文件后，把 index.html / advisor.html 里 ?v= 数字加一，避免旧缓存。
  */
 window.ASDX_CONFIG = {
@@ -21,6 +28,9 @@ window.ASDX_CONFIG = {
   SUBMIT_TIMEOUT_MS: 12000,
   QUESTION_PROVIDER: "rules",
   PRODUCT_API_BASE: "",
+  AI_ENDPOINT: "",
+  AI_TIMEOUT_MS: 25000,
+  TRACK_ENDPOINT: "",
   ADVISOR_NAME: "翔叔",
   PRICE_LAB: 1499,
   SITE_URL: "xiangshu3721.github.io/ai-scene-dx"
