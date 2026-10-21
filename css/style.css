@@ -330,3 +330,5 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 700; letter-spacing: .01em;
 .v2-modal[hidden] { display: none; }
 .v2-modal-box { background: var(--card); border-radius: 16px; padding: 20px; width: 100%; max-width: 340px; text-align: center; display: flex; flex-direction: column; gap: 8px; }
 .v2-qr { width: 220px; height: 220px; object-fit: contain; margin: 0 auto; -webkit-touch-callout: default; }
+.v2-saveimg-top { margin: 4px 0 0; }
+.v2 .r-end .btn-lg { margin: 0 auto 4px; display: flex; }

@@ -213,6 +213,25 @@
       }
       return y + h;
     },
+    // V0.2：流程对比（现在怎么做 → AI 参与后），两列等高
+    flow: function (ctx, d, y, b) {
+      var gap = 34, cw = (W - PAD * 2 - gap) / 2, iw = cw - 32;
+      ctx.font = font(16);
+      function col(steps) { var n = 0; steps.forEach(function (t, i) { n += wrap(ctx, (i + 1) + ". " + t, iw).length; }); return n; }
+      var n = Math.max(col(b.before), col(b.after)), h = 16 + 32 + n * 26 + 18;
+      if (d) {
+        [[b.before, PAD, "#fffdf9", C.line, b.l1 || "现在怎么做", C.soft], [b.after, PAD + cw + gap, C.greenBg, C.green, b.l2 || "AI 参与后", C.ink]].forEach(function (c) {
+          ctx.fillStyle = c[2]; rr(ctx, c[1], y, cw, h, 12); ctx.fill();
+          ctx.strokeStyle = c[3]; ctx.lineWidth = 1; rr(ctx, c[1] + .5, y + .5, cw - 1, h - 1, 12); ctx.stroke();
+          ctx.textBaseline = "top"; ctx.fillStyle = C.ink; ctx.font = font(17, 700, true); ctx.fillText(c[4], c[1] + 16, y + 16);
+          ctx.font = font(16); ctx.fillStyle = c[5]; var yy = y + 50;
+          c[0].forEach(function (t, i) { wrap(ctx, (i + 1) + ". " + t, iw).forEach(function (l) { ctx.fillText(l, c[1] + 16, yy); yy += 26; }); });
+        });
+        ctx.fillStyle = C.muted; ctx.font = font(22, 600); ctx.textAlign = "center"; ctx.textBaseline = "middle";
+        ctx.fillText("→", W / 2, y + h / 2); ctx.textAlign = "left";
+      }
+      return y + h;
+    },
     foot: function (ctx, d, y, b) { return textBlock(ctx, d, y, b.text, { size: 14, color: C.muted, lh: 22, align: "center" }); }
   };
 
@@ -243,22 +262,25 @@
     if (overlay) { overlay.remove(); overlay = null; document.body.classList.remove("no-scroll"); }
     if (lastFocus && lastFocus.focus) try { lastFocus.focus(); } catch (e) {}
   }
-  function show(canvas, filename, title) {
-    var url = "";
-    try { url = canvas.toDataURL("image/png"); } catch (e) { url = ""; }
+  function show(canvas, filename, title, opts) {
+    opts = opts || {};
+    var url = "", mime = opts.mime || "image/png", ext = mime === "image/jpeg" ? ".jpg" : ".png";
+    try { url = canvas.toDataURL(mime, opts.quality || 0.92); } catch (e) { url = ""; }
+    if (url.length < 32) url = "";
     close();
     lastFocus = document.activeElement;
     overlay = document.createElement("div");
     overlay.className = "sheet-overlay";
     overlay.setAttribute("role", "dialog"); overlay.setAttribute("aria-modal", "true");
     overlay.setAttribute("aria-label", title || "保存图片");
-    var touch = ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+    var touch = opts.preview || ("ontouchstart" in window) || (navigator.maxTouchPoints > 0);
+    overlay.setAttribute("data-mode", opts.preview ? "preview" : "show");
     overlay.innerHTML = url
       ? '<div class="sheet-panel"><div class="sheet-head"><p class="sheet-tip">' +
-        (touch ? "<b>长按下面的图片</b>，选「保存到相册」或「存储图像」。" : "图片已生成，点「下载图片」保存到电脑。") +
+        (touch ? "<b>长按图片保存</b>，选「保存到相册」或「存储图像」。" : "图片已生成，点「下载图片」保存到电脑。") +
         '</p><button type="button" class="sheet-x" aria-label="关闭">×</button></div>' +
         '<div class="sheet-imgwrap"><img class="sheet-img" alt="' + (title || "生成的图片") + '" src="' + url + '"></div>' +
-        '<div class="sheet-actions"><a class="btn btn-primary" download="' + (filename || "AI场景诊断") + '.png" href="' + url + '">下载图片</a>' +
+        '<div class="sheet-actions"><a class="btn btn-primary" download="' + (filename || "AI场景诊断") + ext + '" href="' + url + '">下载图片</a>' +
         '<button type="button" class="btn btn-ghost sheet-close">关闭</button></div></div>'
       : '<div class="sheet-panel"><div class="sheet-head"><p class="sheet-tip">抱歉，这台设备暂时生成不了图片。可以直接截屏保存。</p>' +
         '<button type="button" class="sheet-x" aria-label="关闭">×</button></div></div>';
@@ -272,5 +294,30 @@
     return !!url;
   }
 
-  root.Sheet = { render: render, show: show, close: close, colors: C, TYPE_COLOR: TYPE_COLOR, starStr: starStr };
+  /* V0.2 保存长图：能下载就直接下载；微信内置浏览器 / iPhone·iPad 不能直接下载 → 弹预览，提示长按保存。
+   * 返回 Promise<"download"|"preview"|"fail"> */
+  function ua() { return (root.navigator && navigator.userAgent) || ""; }
+  function noDirectDownload() {
+    var u = ua();
+    return /MicroMessenger/i.test(u) || /iPhone|iPad|iPod/i.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints > 1) || !("download" in document.createElement("a"));
+  }
+  function save(canvas, filename, title, opts) {
+    opts = opts || {};
+    var mime = opts.mime || "image/jpeg", q = opts.quality || 0.9;
+    return new Promise(function (resolve) {
+      if (noDirectDownload() || !canvas.toBlob || !root.URL || !URL.createObjectURL) {
+        resolve(show(canvas, filename, title, { mime: mime, quality: q, preview: true }) ? "preview" : "fail"); return;
+      }
+      canvas.toBlob(function (blob) {
+        if (!blob || !blob.size) { resolve(show(canvas, filename, title, { mime: mime, quality: q, preview: true }) ? "preview" : "fail"); return; }
+        var url = URL.createObjectURL(blob), a = document.createElement("a");
+        a.href = url; a.download = (filename || "AI场景诊断") + (mime === "image/jpeg" ? ".jpg" : ".png");
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(url); }, 30000);
+        resolve("download");
+      }, mime, q);
+    });
+  }
+
+  root.Sheet = { render: render, show: show, save: save, noDirectDownload: noDirectDownload, close: close, colors: C, TYPE_COLOR: TYPE_COLOR, starStr: starStr };
 })(window);

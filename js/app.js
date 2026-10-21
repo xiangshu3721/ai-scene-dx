@@ -63,6 +63,7 @@
     clearProg: function () { store.del(K.prog); },
     saveReport: function (rec) { return store.set(K.reports, [rec].concat(reports()).slice(0, 20)); },
     openRec: openRec,
+    nickname: function () { var c = store.get(K.contact, {}) || {}; return String(c.name || "").trim().slice(0, 20); },
     markIntent: function () { // 点联系方式 = 意向（不等于预约）
       if (!S.rec || !S.rec.id) return;
       var l = store.get(K.reports, []); if (!Array.isArray(l)) return;
@@ -599,6 +600,7 @@
   window.addEventListener("unhandledrejection", onErr);
 
   // 测试与调试用（不含任何个人信息）
+  window.ASDX_APP_V2 = { imgBlocks: V2.imgBlocks }; // 测试用
   window.ASDX_APP = { state: function () { return S; }, reportBlocks: reportBlocks, cardBlocks: cardBlocks, curRep: function () { return S.rec ? curRep() : null; }, flushQueue: flushQueue };
 
   try { render(); } catch (e) { onErr(); throw e; }

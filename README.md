@@ -76,4 +76,5 @@ python3 tests/e2e.py http://127.0.0.1:8765/ ./shots
   `js/consult-config.js`（顾问微信号/二维码配置，现为空）、`js/track.js`（埋点）、`server/ai-proxy.js`（DeepSeek 服务端代理，未部署）
 - 启用 AI：部署 `server/ai-proxy.js`（环境变量 `DEEPSEEK_API_KEY`），把地址填进 `js/config.js` 的 `AI_ENDPOINT`。不填 = 本地规则简化版报告。
 - 旧版（V0.1）报告：存储键不变（`asdx.reports.v1`），无 `v:2` 的记录仍按旧版页面打开。
-- 测试：`python3 tests/e2e_v2.py http://127.0.0.1:8765/ ./shots`
+- 测试：`python3 tests/e2e_v2.py http://127.0.0.1:8765/ ./shots`；长图：`python3 tests/e2e_img.py http://127.0.0.1:8765/ ./shots`
+- 保存报告长图：纯 Canvas 本地绘制（js/sheet.js，无第三方库/CDN），JPEG 0.9、2 倍图（宽 1440）。安卓/电脑直接下载；微信内置浏览器、iPhone/iPad 弹预览「长按图片保存」。埋点 `report_save_image`。

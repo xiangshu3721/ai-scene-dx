@@ -137,6 +137,7 @@
       h += '<section class="r-first"><p class="kicker">你的AI场景诊断报告 · 编号 ' + esc(rec.code) + "</p>";
       h += '<h1 class="r-h1 v2-insight" data-focus>' + esc(r.insight) + "</h1>";
       if (r.source !== "ai") h += '<p class="note v2-src">本报告由本地规则生成（简化版）。</p>';
+      h += '<p class="v2-saveimg-top"><button type="button" class="btn-link" data-act="v2SaveImg">保存报告长图 ↓</button></p>';
       h += "</section>";
       // ② 3 个 AI 机会
       h += '<section class="r-sec" aria-labelledby="oT"><h2 id="oT">你的 3 个 AI 机会</h2><p class="sec-sub">第 1 个是最建议先动手的。</p>';
@@ -157,7 +158,7 @@
       h += demoHtml(r.demo, x);
       // 会诊
       h += consultHtml(rec.code);
-      h += '<section class="r-end"><div class="r-actions"><button type="button" class="btn btn-ghost" data-act="restart">重新测试</button><button type="button" class="btn btn-ghost" data-act="home">回到首页</button></div>';
+      h += '<section class="r-end"><button type="button" class="btn btn-primary btn-lg" data-act="v2SaveImg">保存报告长图</button><p class="note" id="v2ImgMsg" aria-live="polite"></p><div class="r-actions"><button type="button" class="btn btn-ghost" data-act="restart">重新测试</button><button type="button" class="btn btn-ghost" data-act="home">回到首页</button></div>';
       h += '<p class="note">' + (S().saveOk === false ? "这台设备的浏览器不让存数据，报告关掉就没了，建议先截图。" : "报告已保存在这台设备上，回到首页的「我的报告」随时能看。") + "</p></section></main>";
       h += qrModal();
       return h;
@@ -251,6 +252,60 @@
       api.openRec(rec, ok);
     }
 
+    /* ---------- 保存长图（Canvas 本地绘制，无第三方库） ---------- */
+    var DIR_T = { "减负": "C", "增能": "B", "创造": "A" };
+    var DEMO_TXT = {
+      table: ["你：帮我比较 3 款扫地机器人，按价格、噪音、售后列一张表", "AI（演示）：甲款价格较低、噪音偏大、售后 1 年；乙款价格中等、噪音适中、售后 2 年；丙款价格较高、安静、售后 2 年。需要你核实最新价格与售后条款。"],
+      plan: ["你：我想用一个月学会用 AI 做 PPT，每天能抽 30 分钟", "AI（演示）：第 1 周把文字改成提纲；第 2 周生成 3 页草稿自己调整；第 3 周拿真实汇报试做；第 4 周总结固定做法。"],
+      draft: ["你：帮我写一段小店新品上架的朋友圈，语气亲切，60 字以内", "AI（演示）：新朋友到店啦～这周上了两款手作新品，量不多，喜欢的朋友可以来店里看看实物，有问题随时问我。"],
+      reply: ["你：客户问东西什么时候能到？能不能便宜点？", "AI（演示）：您好，订单已经安排，预计 2～3 天送到，发货后第一时间发您单号。价格已经是活动价，下次有优惠优先通知您～（发送前请核对实际发货时间）"]
+    };
+    function imgBlocks(rec) {
+      var r = reportOf(rec), C = root.Sheet.colors, c = consultCfg(), nick = api.nickname ? api.nickname() : "";
+      var b = [{ t: "brand", text: "AI场景诊断 · 报告", right: U.fmtDate(rec.t) }, { t: "gap", h: 26 },
+        { t: "p", text: "报告编号 " + rec.code + (nick ? "　·　" + nick + " 的报告" : ""), size: 15, color: C.red }, { t: "gap", h: 10 },
+        { t: "title", text: r.insight, size: 27 }, { t: "gap", h: 8 }];
+      if (r.source !== "ai") b.push({ t: "p", text: "本报告由本地规则生成（简化版）。", size: 14, color: C.muted });
+      b.push({ t: "gap", h: 22 }, { t: "h", text: "你的 3 个 AI 机会" }, { t: "gap", h: 12 });
+      r.opps.forEach(function (o, i) {
+        var ls = [["为什么值得　", o.why], ["AI 帮你做　", o.ai], ["你负责　　　", o.you]], marks = [];
+        if (i === 0) marks.push("★ 重点推荐"); if (o.source === "discover") marks.push("你可能还没想到");
+        if (marks.length) ls.unshift(["", "【" + marks.join(" · ") + "】"]);
+        b.push({ t: "card", rank: i + 1, title: o.name, tag: o.dir, type: DIR_T[o.dir] || "B", lines: ls }, { t: "gap", h: 12 });
+      });
+      if (r.sensitive) b.push({ t: "box", lines: ["涉及健康、法律、财务或隐私的内容，AI 只负责整理和出草稿，结论请由你或专业人士把关。"] }, { t: "gap", h: 12 });
+      b.push({ t: "gap", h: 12 }, { t: "h", text: "头号场景：" + r.flow.title }, { t: "gap", h: 12 }, { t: "flow", before: r.flow.before, after: r.flow.after },
+        { t: "gap", h: 8 }, { t: "p", text: r.flow.note || "这是初步方案，需结合实际情况核实。", size: 14, color: C.muted }, { t: "gap", h: 24 });
+      var dm = DEMO_TXT[(r.demo && r.demo.type) || "plan"] || DEMO_TXT.plan;
+      b.push({ t: "h", text: "AI 微体验【演示】" }, { t: "gap", h: 10 }, { t: "box", title: "以下为模拟演示，数据是虚构的", lines: dm, bg: C.greenBg }, { t: "gap", h: 24 });
+      b.push({ t: "h", text: "你的这些AI机会，到底该怎么真正实现？" }, { t: "gap", h: 10 },
+        { t: "p", text: "AI场景1v1会诊：免费，约 45 分钟，微信沟通，和" + c.name + "一起把报告里的机会落到实处。", size: 16 }, { t: "gap", h: 10 },
+        { t: "box", title: "我们会聊什么", lines: ["1. 厘清你的真实需求", "2. 找到最值得 AI 化的场景", "3. 讨论具体怎么实现", "4. 确定下一步行动"], bg: C.goldBg }, { t: "gap", h: 10 },
+        { t: "box", title: "你会带走一张《AI行动建议卡》", lines: ["核心 AI 机会（3 项以内）· 优先做的 1 个项目", "初步实现思路及工具方向 · 下一步行动建议"], bg: C.goldBg }, { t: "gap", h: 10 },
+        { t: "p", text: "说明：45 分钟用来理清方向和方案，不承诺在会诊中完成开发或搭建。", size: 14, color: C.muted }, { t: "gap", h: 14 });
+      if (c.wx) b.push({ t: "quote", text: "添加" + c.name + "微信：" + c.wx + "\n备注「" + c.remark + "」，报告编号 " + rec.code });
+      else b.push({ t: "quote", text: "预约时请告诉" + c.name + "你的报告编号：" + rec.code });
+      b.push({ t: "gap", h: 18 }, { t: "foot", text: "AI场景诊断 · " + (CFG.SITE_URL || "") });
+      return b;
+    }
+    A.v2SaveImg = function (el) {
+      if (S().imgBusy) return;
+      var rec = S().rec, btns = document.querySelectorAll('[data-act="v2SaveImg"]'), msg = document.getElementById("v2ImgMsg");
+      function busy(on) { S().imgBusy = on; for (var i = 0; i < btns.length; i++) { btns[i].disabled = on; btns[i].textContent = on ? "正在生成长图…" : (btns[i].classList.contains("btn-link") ? "保存报告长图 ↓" : "保存报告长图"); } }
+      busy(true); if (msg) msg.textContent = "正在生成长图，请稍等…";
+      setTimeout(function () { // 让“生成中”先显示出来
+        var p;
+        try { p = root.Sheet.save(root.Sheet.render(imgBlocks(rec), { scale: 2 }), "AI场景诊断报告-" + rec.code, "AI场景诊断报告", { mime: "image/jpeg", quality: 0.9 }); }
+        catch (e) { p = Promise.resolve("fail"); }
+        p.then(function (mode) {
+          busy(false);
+          TRACK("report_save_image", { code: rec.code, mode: mode });
+          if (msg) msg.textContent = mode === "download" ? "长图已开始下载，可在手机相册或「下载」里找到。" : mode === "preview" ? "已生成，长按图片保存。" : "生成失败了，可以直接截屏保存。";
+          if (mode === "fail") api.flash("生成长图失败，可以直接截屏保存");
+        });
+      }, 60);
+    };
+
     function copy(text, okMsg) { return U.copyText(text).then(function (ok) { api.flash(ok ? okMsg : "这台设备不让自动复制，请长按文字手动复制"); return ok; }); }
 
     A.v2Status = function (el) { a().status = el.getAttribute("data-v"); api.save(); api.rerender(); };
@@ -305,6 +360,6 @@
       return true;
     }
 
-    return { views: V, actions: A, onInput: onInput, reportOf: reportOf, consultHtml: consultHtml, bookingText: bookingText };
+    return { views: V, actions: A, onInput: onInput, imgBlocks: imgBlocks, reportOf: reportOf, consultHtml: consultHtml, bookingText: bookingText };
   };
 })(window);
